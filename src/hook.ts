@@ -37,9 +37,10 @@ async function main() {
     payload = JSON.parse(input);
   } catch {
     process.exit(0);
+    return; // unreachable, but makes control flow explicit
   }
 
-  processHookPayload(payload!);
+  processHookPayload(payload);
 }
 
 // Only run main when executed directly (not imported)

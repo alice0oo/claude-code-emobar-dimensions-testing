@@ -108,7 +108,7 @@ export function deployHookScript(hookScriptPath: string = HOOK_SCRIPT_PATH): voi
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 
   const packageHook = new URL("../dist/emobar-hook.js", import.meta.url).pathname
-    .replace(/^\/([A-Z]:)/, "$1");
+    .replace(/^\/([A-Za-z]:)/, "$1");
   fs.copyFileSync(packageHook, hookScriptPath);
 }
 

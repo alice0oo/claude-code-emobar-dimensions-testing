@@ -1,11 +1,11 @@
 // --- Types ---
 
 export interface EmotionalState {
-  load: number;       // 1-10: cognitive complexity
-  certainty: number;  // 1-10: clarity of path forward
-  connection: number; // 1-10: attunement with user
-  energy: number;     // 1-10: engagement/curiosity
-  friction: number;   // 1-10: accumulated frustration
+  load: number;       // 0-10: cognitive complexity
+  certainty: number;  // 0-10: clarity of path forward
+  connection: number; // 0-10: attunement with user
+  energy: number;     // 0-10: engagement/curiosity
+  friction: number;   // 0-10: accumulated frustration
   keyword: string;    // one-word dominant emotion
 }
 
