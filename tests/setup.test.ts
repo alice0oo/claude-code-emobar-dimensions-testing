@@ -138,7 +138,7 @@ describe("statusLine integration", () => {
     configureStatusLine(tmpFile);
     const settings = JSON.parse(fs.readFileSync(tmpFile, "utf-8"));
     expect(settings.statusLine.command).toContain("ccstatusline");
-    expect(settings.statusLine.command).toContain("emobar display minimal");
+    expect(settings.statusLine.command).toContain("emobar display");
   });
 
   it("does not duplicate if emobar already in statusline", () => {
@@ -154,7 +154,7 @@ describe("statusLine integration", () => {
     fs.writeFileSync(tmpFile, JSON.stringify({
       statusLine: {
         type: "command",
-        command: "bash -c 'npx -y ccstatusline@latest; echo -n \" \"; npx emobar display minimal'",
+        command: "bash -c 'npx -y ccstatusline@latest; echo -n \" \"; npx emobar display'",
         padding: 0,
       },
     }));

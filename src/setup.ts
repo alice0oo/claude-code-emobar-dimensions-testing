@@ -118,7 +118,7 @@ export function configureStatusLine(filePath: string = SETTINGS_PATH): void {
     const existingCmd = current.command;
     settings.statusLine = {
       type: "command",
-      command: `bash -c '${existingCmd}; echo -n " "; npx emobar display minimal'`,
+      command: `bash -c '${existingCmd}; echo -n " "; npx emobar display'`,
       padding: current.padding ?? 0,
     };
   } else {
