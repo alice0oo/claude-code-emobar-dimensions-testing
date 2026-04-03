@@ -4,6 +4,8 @@ import {
   removeClaudeMd,
   addHookToSettings,
   removeHookFromSettings,
+  configureStatusLine,
+  restoreStatusLine,
 } from "../src/setup.js";
 import fs from "node:fs";
 import path from "node:path";
@@ -108,5 +110,65 @@ describe("settings.json hook management", () => {
     const settings = JSON.parse(fs.readFileSync(tmpFile, "utf-8"));
     expect(settings.hooks.Stop).toHaveLength(1);
     expect(settings.hooks.Stop[0].hooks[0].command).toBe("other-hook.sh");
+  });
+});
+
+describe("statusLine integration", () => {
+  let tmpFile: string;
+
+  beforeEach(() => {
+    tmpFile = path.join(os.tmpdir(), `statusline-test-${Date.now()}.json`);
+  });
+
+  afterEach(() => {
+    try { fs.unlinkSync(tmpFile); } catch {}
+  });
+
+  it("sets emobar as statusline when none exists", () => {
+    fs.writeFileSync(tmpFile, "{}");
+    configureStatusLine(tmpFile);
+    const settings = JSON.parse(fs.readFileSync(tmpFile, "utf-8"));
+    expect(settings.statusLine.command).toBe("npx emobar display");
+  });
+
+  it("wraps existing ccstatusline with emobar", () => {
+    fs.writeFileSync(tmpFile, JSON.stringify({
+      statusLine: { type: "command", command: "npx -y ccstatusline@latest", padding: 0 },
+    }));
+    configureStatusLine(tmpFile);
+    const settings = JSON.parse(fs.readFileSync(tmpFile, "utf-8"));
+    expect(settings.statusLine.command).toContain("ccstatusline");
+    expect(settings.statusLine.command).toContain("emobar display minimal");
+  });
+
+  it("does not duplicate if emobar already in statusline", () => {
+    fs.writeFileSync(tmpFile, JSON.stringify({
+      statusLine: { type: "command", command: "npx emobar display", padding: 0 },
+    }));
+    configureStatusLine(tmpFile);
+    const settings = JSON.parse(fs.readFileSync(tmpFile, "utf-8"));
+    expect(settings.statusLine.command).toBe("npx emobar display");
+  });
+
+  it("restoreStatusLine unwraps to original command", () => {
+    fs.writeFileSync(tmpFile, JSON.stringify({
+      statusLine: {
+        type: "command",
+        command: "bash -c 'npx -y ccstatusline@latest; echo -n \" \"; npx emobar display minimal'",
+        padding: 0,
+      },
+    }));
+    restoreStatusLine(tmpFile);
+    const settings = JSON.parse(fs.readFileSync(tmpFile, "utf-8"));
+    expect(settings.statusLine.command).toBe("npx -y ccstatusline@latest");
+  });
+
+  it("restoreStatusLine removes statusline when emobar was the only one", () => {
+    fs.writeFileSync(tmpFile, JSON.stringify({
+      statusLine: { type: "command", command: "npx emobar display", padding: 0 },
+    }));
+    restoreStatusLine(tmpFile);
+    const settings = JSON.parse(fs.readFileSync(tmpFile, "utf-8"));
+    expect(settings.statusLine).toBeUndefined();
   });
 });

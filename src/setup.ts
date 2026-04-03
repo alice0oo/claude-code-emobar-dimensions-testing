@@ -95,6 +95,71 @@ export function removeHookFromSettings(filePath: string = SETTINGS_PATH): void {
   fs.writeFileSync(filePath, JSON.stringify(settings, null, 2));
 }
 
+// --- statusLine integration ---
+
+function readSettings(filePath: string): Record<string, any> {
+  if (!fs.existsSync(filePath)) return {};
+  return JSON.parse(fs.readFileSync(filePath, "utf-8"));
+}
+
+function writeSettings(filePath: string, settings: Record<string, any>): void {
+  fs.writeFileSync(filePath, JSON.stringify(settings, null, 2));
+}
+
+export function configureStatusLine(filePath: string = SETTINGS_PATH): void {
+  const settings = readSettings(filePath);
+  const current = settings.statusLine;
+
+  // Already configured with emobar
+  if (current?.command?.includes("emobar")) return;
+
+  if (current?.type === "command" && current.command) {
+    // Wrap existing command (e.g. ccstatusline) with emobar
+    const existingCmd = current.command;
+    settings.statusLine = {
+      type: "command",
+      command: `bash -c '${existingCmd}; echo -n " "; npx emobar display minimal'`,
+      padding: current.padding ?? 0,
+    };
+  } else {
+    // No statusline or not command-based — set emobar as the statusline
+    settings.statusLine = {
+      type: "command",
+      command: "npx emobar display",
+      padding: 0,
+    };
+  }
+
+  writeSettings(filePath, settings);
+}
+
+export function restoreStatusLine(filePath: string = SETTINGS_PATH): void {
+  if (!fs.existsSync(filePath)) return;
+
+  const settings = readSettings(filePath);
+  const current = settings.statusLine;
+  if (!current?.command?.includes("emobar")) return;
+
+  // Check if there's a wrapped command to restore
+  const wrappedMatch = current.command.match(
+    /^bash -c '(.+?); echo -n " "; npx emobar display.*'$/
+  );
+
+  if (wrappedMatch) {
+    // Restore the original wrapped command
+    settings.statusLine = {
+      type: "command",
+      command: wrappedMatch[1],
+      padding: current.padding ?? 0,
+    };
+  } else {
+    // EmoBar was the only statusline — remove it
+    delete settings.statusLine;
+  }
+
+  writeSettings(filePath, settings);
+}
+
 // --- Full setup / uninstall ---
 
 function backup(filePath: string): void {
@@ -129,8 +194,10 @@ export function setup(): void {
   addHookToSettings();
   console.log(`  Stop hook added to ${SETTINGS_PATH}`);
 
+  configureStatusLine();
+  console.log("  Statusline configured");
+
   console.log("\n  EmoBar is active. Claude will perform emotional check-ins from now on.");
-  console.log("  Add to your statusline: npx emobar display");
 }
 
 export function uninstall(): void {
@@ -142,6 +209,9 @@ export function uninstall(): void {
 
   removeHookFromSettings();
   console.log("  Removed Stop hook from settings.json");
+
+  restoreStatusLine();
+  console.log("  Statusline restored");
 
   if (fs.existsSync(HOOK_SCRIPT_PATH)) {
     fs.unlinkSync(HOOK_SCRIPT_PATH);
