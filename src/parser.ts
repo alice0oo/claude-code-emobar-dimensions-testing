@@ -11,21 +11,28 @@ export function parseEmoBarTag(text: string): EmotionalState | null {
     return null;
   }
 
+  // Validate emotion keyword (must come first conceptually)
+  if (typeof parsed.emotion !== "string" || parsed.emotion.length === 0) {
+    return null;
+  }
+
+  // Validate valence: -5 to +5
+  const valence = parsed.valence;
+  if (typeof valence !== "number" || valence < -5 || valence > 5) return null;
+
+  // Validate 0-10 dimensions: arousal, calm, connection, load
   for (const dim of DIMENSIONS) {
+    if (dim === "valence") continue; // already validated
     const val = parsed[dim];
     if (typeof val !== "number" || val < 0 || val > 10) return null;
   }
 
-  if (typeof parsed.keyword !== "string" || parsed.keyword.length === 0) {
-    return null;
-  }
-
   return {
-    load: parsed.load as number,
-    certainty: parsed.certainty as number,
+    emotion: parsed.emotion as string,
+    valence: parsed.valence as number,
+    arousal: parsed.arousal as number,
+    calm: parsed.calm as number,
     connection: parsed.connection as number,
-    energy: parsed.energy as number,
-    friction: parsed.friction as number,
-    keyword: parsed.keyword as string,
+    load: parsed.load as number,
   };
 }

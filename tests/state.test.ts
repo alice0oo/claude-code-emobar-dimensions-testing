@@ -17,9 +17,15 @@ describe("state", () => {
 
   it("writes and reads back state", () => {
     const state = {
-      load: 4, certainty: 7, connection: 10, energy: 9, friction: 0,
-      keyword: "flow", stressIndex: 1.6,
-      timestamp: "2026-04-03T22:00:00Z", sessionId: "abc",
+      emotion: "focused", valence: 3, arousal: 5, calm: 8, connection: 9, load: 6,
+      stressIndex: 2.3,
+      behavioral: {
+        capsWords: 0, exclamationRate: 0, selfCorrections: 0,
+        hedging: 0, ellipsis: 0, repetition: 0, emojiCount: 0,
+        behavioralArousal: 0.5, behavioralCalm: 9.5,
+      },
+      divergence: 0.8,
+      timestamp: "2026-04-04T10:00:00Z", sessionId: "abc",
     };
     writeState(state, tmpFile);
     const read = readState(tmpFile);

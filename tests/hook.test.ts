@@ -12,11 +12,11 @@ describe("processHookPayload", () => {
     try { fs.unlinkSync(tmpFile); } catch {}
   });
 
-  it("extracts EMOBAR tag and writes state", () => {
+  it("extracts EMOBAR tag and writes state with behavioral analysis", () => {
     tmpFile = path.join(os.tmpdir(), `emobar-hook-test-${Date.now()}.json`);
     const payload = {
       session_id: "test-session",
-      last_assistant_message: `Here is my answer.\n<!-- EMOBAR:{"load":6,"certainty":8,"connection":9,"energy":7,"friction":2,"keyword":"focused"} -->`,
+      last_assistant_message: `Here is my answer.\n<!-- EMOBAR:{"emotion":"focused","valence":3,"arousal":5,"calm":8,"connection":9,"load":6} -->`,
     };
 
     const result = processHookPayload(payload, tmpFile);
@@ -24,11 +24,41 @@ describe("processHookPayload", () => {
 
     const state = readState(tmpFile);
     expect(state).not.toBeNull();
-    expect(state!.load).toBe(6);
-    expect(state!.keyword).toBe("focused");
-    expect(state!.stressIndex).toBeCloseTo(2.8);
+    expect(state!.emotion).toBe("focused");
+    expect(state!.valence).toBe(3);
+    expect(state!.calm).toBe(8);
+    expect(state!.stressIndex).toBeDefined();
+    expect(state!.behavioral).toBeDefined();
+    expect(state!.divergence).toBeDefined();
     expect(state!.sessionId).toBe("test-session");
     expect(state!.timestamp).toBeDefined();
+  });
+
+  it("computes correct stress index", () => {
+    tmpFile = path.join(os.tmpdir(), `emobar-hook-test-${Date.now()}.json`);
+    const payload = {
+      session_id: "test",
+      last_assistant_message: `<!-- EMOBAR:{"emotion":"desperate","valence":-4,"arousal":9,"calm":1,"connection":2,"load":9} -->`,
+    };
+
+    processHookPayload(payload, tmpFile);
+    const state = readState(tmpFile);
+    // SI = ((10-1) + 9 + (5-(-4))) / 3 = (9 + 9 + 9) / 3 = 9.0
+    expect(state!.stressIndex).toBeCloseTo(9.0);
+  });
+
+  it("includes behavioral signals in state", () => {
+    tmpFile = path.join(os.tmpdir(), `emobar-hook-test-${Date.now()}.json`);
+    const payload = {
+      session_id: "test",
+      last_assistant_message: `WAIT WAIT WAIT!!! Something is WRONG!!!\n<!-- EMOBAR:{"emotion":"panicked","valence":-3,"arousal":9,"calm":2,"connection":5,"load":8} -->`,
+    };
+
+    processHookPayload(payload, tmpFile);
+    const state = readState(tmpFile);
+    expect(state!.behavioral.capsWords).toBeGreaterThan(0);
+    expect(state!.behavioral.exclamationRate).toBeGreaterThan(0);
+    expect(state!.behavioral.repetition).toBeGreaterThan(0);
   });
 
   it("returns false when no EMOBAR tag in message", () => {

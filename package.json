@@ -1,6 +1,6 @@
 {
   "name": "emobar",
-  "version": "0.1.0",
+  "version": "2.0.0",
   "description": "Emotional status bar companion for Claude Code - makes AI emotional state visible",
   "type": "module",
   "bin": {
@@ -31,7 +31,19 @@
     "ai",
     "transparency"
   ],
+  "author": "v4l3r10",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/v4l3r10/emobar.git"
+  },
+  "homepage": "https://github.com/v4l3r10/emobar#readme",
+  "bugs": {
+    "url": "https://github.com/v4l3r10/emobar/issues"
+  },
+  "engines": {
+    "node": ">=18"
+  },
   "devDependencies": {
     "@types/node": "^25.5.2",
     "tsup": "^8.0.0",

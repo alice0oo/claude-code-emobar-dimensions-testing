@@ -2,3 +2,6 @@ node_modules/
 dist/
 *.tgz
 .claude/
+docs/*.html
+docs/*_files/
+docs/extracted_text.txt

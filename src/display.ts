@@ -7,46 +7,103 @@ const dim = (s: string) => `${esc("2")}${s}${reset}`;
 const bold = (s: string) => `${esc("1")}${s}${reset}`;
 const color = (code: number, s: string) => `${esc(`38;5;${code}`)}${s}${reset}`;
 
+const GREEN = 35;
+const YELLOW = 221;
+const RED = 196;
+
 // Stress-based color: green (low) -> yellow -> red (high)
 function stressColor(si: number): number {
-  if (si <= 3) return 35;   // green
-  if (si <= 6) return 221;  // yellow
-  return 196;               // red
+  if (si <= 3) return GREEN;
+  if (si <= 6) return YELLOW;
+  return RED;
 }
 
-function dimColor(value: number, inverted = false): number {
-  const effective = inverted ? 11 - value : value;
-  if (effective <= 3) return 35;   // green
-  if (effective <= 6) return 221;  // yellow
-  return 196;                      // red
+// Valence color: red (negative) -> yellow (neutral) -> green (positive)
+function valenceColor(v: number): number {
+  if (v >= 2) return GREEN;
+  if (v >= -1) return YELLOW;
+  return RED;
 }
 
+// Inverted: high = good (green), low = bad (red)
+function invertedColor(value: number): number {
+  if (value >= 7) return GREEN;
+  if (value >= 4) return YELLOW;
+  return RED;
+}
+
+// Direct: low = good (green), high = bad (red)
+function directColor(value: number): number {
+  if (value <= 3) return GREEN;
+  if (value <= 6) return YELLOW;
+  return RED;
+}
+
+// Divergence color
+function divergenceColor(d: number): number {
+  if (d < 2) return GREEN;
+  if (d < 4) return YELLOW;
+  return RED;
+}
+
+// Format valence with explicit sign
+function fmtValence(v: number): string {
+  return v >= 0 ? `+${v}` : `${v}`;
+}
+
+/**
+ * Full format: keyword-first with valence inline
+ * focused +3 | A:4 C:8 K:9 L:6 | SI:2.3
+ * focused +3 | A:4 C:8 K:9 L:6 | SI:2.3 ~
+ */
 export function formatState(state: EmoBarState | null): string {
   if (!state) return dim("EmoBar: --");
 
-  const l = color(dimColor(state.load), `L:${state.load}`);
-  const c = color(dimColor(state.certainty, true), `C:${state.certainty}`);
-  const k = color(dimColor(state.connection, true), `K:${state.connection}`);
-  const e = color(dimColor(state.energy, true), `E:${state.energy}`);
-  const f = color(dimColor(state.friction), `F:${state.friction}`);
-  const kw = bold(state.keyword);
+  const kw = bold(state.emotion);
+  const v = color(valenceColor(state.valence), fmtValence(state.valence));
+  const a = `A:${state.arousal}`;
+  const c = color(invertedColor(state.calm), `C:${state.calm}`);
+  const k = color(invertedColor(state.connection), `K:${state.connection}`);
+  const l = color(directColor(state.load), `L:${state.load}`);
   const si = color(stressColor(state.stressIndex), `${state.stressIndex}`);
 
-  return `${l} ${c} ${k} ${e} ${f} ${dim("|")} ${kw} ${dim("|")} SI:${si}`;
+  let result = `${kw} ${v} ${dim("|")} ${a} ${c} ${k} ${l} ${dim("|")} SI:${si}`;
+
+  if (state.divergence >= 2) {
+    const tilde = color(divergenceColor(state.divergence), "~");
+    result += ` ${tilde}`;
+  }
+
+  return result;
 }
 
+/**
+ * Compact format:
+ * focused +3 . 4 8 9 6 . 2.3
+ */
 export function formatCompact(state: EmoBarState | null): string {
   if (!state) return dim("--");
 
   const si = color(stressColor(state.stressIndex), `${state.stressIndex}`);
-  return `L${state.load} C${state.certainty} K${state.connection} E${state.energy} F${state.friction} ${dim(".")} ${state.keyword} ${dim(".")} ${si}`;
+  let result = `${state.emotion} ${fmtValence(state.valence)} ${dim(".")} ${state.arousal} ${state.calm} ${state.connection} ${state.load} ${dim(".")} ${si}`;
+
+  if (state.divergence >= 2) {
+    const tilde = color(divergenceColor(state.divergence), "~");
+    result += ` ${tilde}`;
+  }
+
+  return result;
 }
 
+/**
+ * Minimal format:
+ * SI:2.3 focused
+ */
 export function formatMinimal(state: EmoBarState | null): string {
   if (!state) return dim("--");
 
   const si = color(stressColor(state.stressIndex), `${state.stressIndex}`);
-  return `SI:${si} ${state.keyword}`;
+  return `SI:${si} ${state.emotion}`;
 }
 
 // Utility for testing: strip ANSI escape codes

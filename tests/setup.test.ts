@@ -28,6 +28,8 @@ describe("CLAUDE.md injection", () => {
     expect(content).toContain("EMOBAR:START");
     expect(content).toContain("EMOBAR:END");
     expect(content).toContain("Emotional Check-in");
+    expect(content).toContain("emotion");
+    expect(content).toContain("valence");
   });
 
   it("appends EMOBAR section to existing CLAUDE.md", () => {

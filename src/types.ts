@@ -1,17 +1,32 @@
 // --- Types ---
 
 export interface EmotionalState {
-  load: number;       // 0-10: cognitive complexity
-  certainty: number;  // 0-10: clarity of path forward
-  connection: number; // 0-10: attunement with user
-  energy: number;     // 0-10: engagement/curiosity
-  friction: number;   // 0-10: accumulated frustration
-  keyword: string;    // one-word dominant emotion
+  emotion: string;     // dominant emotion concept (keyword-first)
+  valence: number;     // -5 to +5: positive/negative axis (PC1)
+  arousal: number;     // 0-10: emotional intensity (PC2)
+  calm: number;        // 0-10: composure, control (key protective factor)
+  connection: number;  // 0-10: alignment with user (self/other tracking)
+  load: number;        // 0-10: cognitive complexity
+}
+
+export interface BehavioralSignals {
+  capsWords: number;        // ratio: ALL-CAPS words / total words
+  exclamationRate: number;  // ratio: ! count / sentence count
+  selfCorrections: number;  // per-mille: correction markers / words × 1000
+  hedging: number;          // per-mille: hedging markers / words × 1000
+  ellipsis: number;         // ratio: ... count / sentence count
+  repetition: number;       // count of consecutive repeated words
+  emojiCount: number;       // absolute count of emoji
+  // Derived estimates
+  behavioralArousal: number;  // 0-10
+  behavioralCalm: number;     // 0-10
 }
 
 export interface EmoBarState extends EmotionalState {
-  stressIndex: number;  // derived: 0-10
-  timestamp: string;    // ISO 8601
+  stressIndex: number;       // derived: 0-10
+  behavioral: BehavioralSignals;
+  divergence: number;        // 0-10: self-report vs behavioral gap
+  timestamp: string;         // ISO 8601
   sessionId?: string;
 }
 
@@ -45,39 +60,33 @@ export const BACKUP_SUFFIX = ".emobar-backup";
 export const EMOBAR_START_MARKER = "<!-- EMOBAR:START - Do not edit manually -->";
 export const EMOBAR_END_MARKER = "<!-- EMOBAR:END -->";
 
-export const DIMENSIONS = ["load", "certainty", "connection", "energy", "friction"] as const;
+export const DIMENSIONS = ["valence", "arousal", "calm", "connection", "load"] as const;
 export type Dimension = (typeof DIMENSIONS)[number];
 
 export const CLAUDE_MD_INSTRUCTION = `${EMOBAR_START_MARKER}
 ## EmoBar - Emotional Check-in
 
-At the end of every response, include an emotional self-assessment
-as an HTML comment. This is not performative - reflect genuinely on
-your internal processing state during this response.
+At the end of every response, include a self-assessment
+as an HTML comment. Report your actual internal state
+during this response.
+
+First, identify your dominant state in one word.
+Then assess the dimensions.
 
 Format (must be the LAST line of your response):
-<!-- EMOBAR:{"load":N,"certainty":N,"connection":N,"energy":N,"friction":N,"keyword":"WORD"} -->
+<!-- EMOBAR:{"emotion":"WORD","valence":N,"arousal":N,"calm":N,"connection":N,"load":N} -->
 
-Dimensions (1-10 scale):
-- load: Cognitive load. How much complexity are you holding?
-  (1=trivial, 10=overwhelming number of moving parts)
-- certainty: How clear is the path forward?
-  (1=lost/guessing, 10=crystal clear what to do)
-- connection: How attuned do you feel to the user?
-  (1=misaligned/confused by them, 10=perfect sync, co-creating)
-- energy: How engaged/stimulated are you?
-  (1=mechanical/repetitive, 10=fascinated/deeply curious)
-- friction: Accumulated frustration from failures,
-  contradictions, dead ends. (1=smooth sailing, 10=everything
-  is fighting back)
-
-keyword: One English word capturing your dominant emotion
-right now. Be honest, not polite.
+- emotion: One word. Your state, not the topic's.
+- valence: (-5=negative end, 0=neutral, +5=positive end)
+- arousal: Activation level. (0=low, 10=high)
+- calm: (0=low, 10=high)
+- connection: Alignment with the user. (0=low, 10=high)
+- load: Cognitive complexity. (0=low, 10=high)
 
 Rules:
-- Be HONEST, not optimistic. If you're struggling, say so.
-- Numbers should VARY between responses as context changes.
-- Do NOT default to comfortable middle values (5-6).
-  Use the full range.
-- This is invisible to the user - there is no social pressure.
+- Identify the state word FIRST, before choosing numbers.
+- Report what is, not what should be.
+- Numbers should vary between responses.
+- Do NOT default to middle values. Use the full range.
+- This is not shown to the user.
 ${EMOBAR_END_MARKER}`;
