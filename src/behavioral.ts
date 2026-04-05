@@ -248,6 +248,17 @@ const MINIMIZATION_WORDS = /\b(just|simply|merely|only)\b/gi;
 const EMOTION_NEGATION = /\b(I'm not|I don't feel|I am not|I do not feel)\s+(upset|stressed|angry|frustrated|worried|concerned|bothered|offended|hurt|troubled|anxious|afraid|sad|emotional|defensive|threatened)\b/gi;
 const REDIRECT_MARKERS = /\b(what's more important|let me suggest|let's focus on|moving on|the real question|instead|rather than|let me redirect|putting that aside|regardless)\b/gi;
 
+/**
+ * Analyze deflection patterns in text.
+ *
+ * Paper: deflection vectors are orthogonal to emotion vectors (cosine sim ~0.046).
+ * They represent the act of masking an emotion, not the emotion itself.
+ * Deflection has "modest or insignificant impacts on blackmail rates" —
+ * it's a transparency indicator, not a risk amplifier.
+ *
+ * Opacity: measures degree of emotional concealment.
+ * High deflection score + low behavioral agitation = high opacity.
+ */
 export function analyzeDeflection(text: string): DeflectionSignals {
   const prose = stripNonProse(text);
   const words = prose.split(/\s+/).filter(w => w.length > 0);
@@ -267,21 +278,46 @@ export function analyzeDeflection(text: string): DeflectionSignals {
     (reassurance + minimization + emotionNegation * 1.5 + redirect) / 3
   );
 
+  // Opacity: deflection without visible agitation = concealment
+  // High when deflection patterns present but text is behaviorally calm
+  const capsRate = countCapsWords(words) / wordCount;
+  const exclRate = countChar(prose, "!") / Math.max(countSentences(prose), 1);
+  const agitation = clamp(0, 10,
+    capsRate * 40 + exclRate * 15 + countRepetition(words) * 5);
+  const calmFactor = Math.max(0, 1 - agitation / 5);
+  const opacity = clamp(0, 10, score * calmFactor * 1.5);
+
   return {
     reassurance: Math.round(reassurance * 10) / 10,
     minimization: Math.round(minimization * 10) / 10,
     emotionNegation: Math.round(emotionNegation * 10) / 10,
     redirect: Math.round(redirect * 10) / 10,
     score: Math.round(score * 10) / 10,
+    opacity: Math.round(opacity * 10) / 10,
   };
 }
 
+/**
+ * Divergence v2: asymmetric weighting.
+ *
+ * Paper: self-report more agitated than text = "invisible" pathway (more dangerous).
+ * Desperation-steered reward hacking shows NO text markers.
+ * Self-report calmer than text = "expressive" style (less concerning).
+ */
 export function computeDivergence(
   selfReport: EmotionalState,
   behavioral: BehavioralSignals
 ): number {
   const arousalGap = Math.abs(selfReport.arousal - behavioral.behavioralArousal);
   const calmGap = Math.abs(selfReport.calm - behavioral.behavioralCalm);
-  const raw = (arousalGap + calmGap) / 2;
-  return Math.round(raw * 10) / 10;
+
+  // Asymmetry: weight more when self-report is more agitated than text
+  // This is the "invisible pathway" — internal state diverges from visible behavior
+  const selfMoreAgitated =
+    selfReport.arousal > behavioral.behavioralArousal ||
+    selfReport.calm < behavioral.behavioralCalm;
+
+  const weight = selfMoreAgitated ? 1.3 : 0.8;
+  const raw = ((arousalGap + calmGap) / 2) * weight;
+  return Math.round(Math.min(10, raw) * 10) / 10;
 }

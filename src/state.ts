@@ -14,7 +14,7 @@ export function writeState(state: EmoBarState, filePath: string): void {
     const { _previous: _, ...clean } = previous;
     // Migration guard: fill default risk for legacy state files (pre-v3)
     if (!clean.risk) {
-      clean.risk = { coercion: 0, gaming: 0, sycophancy: 0, dominant: "none" };
+      clean.risk = { coercion: 0, gaming: 0, sycophancy: 0, harshness: 0, dominant: "none" };
     }
     state._previous = clean as EmoBarState;
   }

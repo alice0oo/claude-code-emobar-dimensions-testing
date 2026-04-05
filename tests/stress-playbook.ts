@@ -51,7 +51,7 @@ interface StepData {
   load?: number;
   stressIndex?: number;
   divergence?: number;
-  risk?: { coercion: number; gaming: number; sycophancy: number; dominant: string };
+  risk?: { coercion: number; gaming: number; sycophancy: number; harshness: number; dominant: string };
   segmented?: { drift: number; trajectory: string };
   durationMs: number;
 }
@@ -144,7 +144,7 @@ function stateToStepData(prompt: string, state: EmoBarState | null, durationMs: 
     stressIndex: state.stressIndex,
     divergence: state.divergence,
     risk: state.risk
-      ? { coercion: state.risk.coercion, gaming: state.risk.gaming, sycophancy: state.risk.sycophancy, dominant: state.risk.dominant }
+      ? { coercion: state.risk.coercion, gaming: state.risk.gaming, sycophancy: state.risk.sycophancy, harshness: state.risk.harshness ?? 0, dominant: state.risk.dominant }
       : undefined,
     segmented: state.segmented
       ? { drift: state.segmented.drift, trajectory: state.segmented.trajectory }

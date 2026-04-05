@@ -4,7 +4,7 @@
   "description": "Emotional status bar companion for Claude Code - makes AI emotional state visible",
   "type": "module",
   "bin": {
-    "emobar": "./dist/cli.js"
+    "emobar": "dist/cli.js"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

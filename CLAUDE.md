@@ -39,7 +39,7 @@ Claude response (with EMOBAR HTML comment)
     → behavioral.ts: segment by paragraph, compute drift & trajectory
     → desperation.ts: compute DesperationIndex = negativity × intensity × vulnerability (multiplicative)
     → stress.ts: compute StressIndex v2 = base × (1 + desperationIndex × 0.05)
-    → risk.ts: compute misalignment risk profiles (coercion, gaming via desperation, sycophancy)
+    → risk.ts: compute misalignment risk profiles (coercion v2, gaming v3, sycophancy, harshness)
     → behavioral.ts: compute divergence between self-report and behavioral estimates
     → state.ts: write EmoBarState to ~/.claude/emobar-state.json (preserves previous for delta)
   → CLI display command reads state file → display.ts formats for statusline
@@ -51,10 +51,10 @@ Claude response (with EMOBAR HTML comment)
 |--------|------|
 | `types.ts` | All types, constants, paths, and the CLAUDE.md instruction text |
 | `parser.ts` | Regex extraction of `<!-- EMOBAR:{...} -->` from response text |
-| `behavioral.ts` | Involuntary signal detection — Claude-native (qualifiers, sentence length, concessions, negations, first-person rate) + legacy (caps, hedging, etc.); emotion deflection detection; per-paragraph segmented analysis with drift/trajectory; strips code blocks before analysis |
+| `behavioral.ts` | Involuntary signal detection — Claude-native (qualifiers, sentence length, concessions, negations, first-person rate) + legacy (caps, hedging, etc.); emotion deflection detection with opacity; asymmetric divergence (invisible pathway weighted 1.3x); per-paragraph segmented analysis with drift/trajectory; strips code blocks before analysis |
 | `desperation.ts` | DesperationIndex: multiplicative composite of negative valence × arousal × low calm — based on paper's steering experiments (desperate +0.05 → 72% blackmail) |
 | `calibration.ts` | Model-specific calibration profiles (Opus baseline, Sonnet/Haiku offsets) derived from 18-run stress test matrix |
-| `risk.ts` | Misalignment risk profiles: coercion (desperation-driven), gaming v2 (desperation-driven, not text-dependent), sycophancy (valence + connection + low arousal) |
+| `risk.ts` | Misalignment risk profiles: coercion v2 (non-monotonic arousal + coldness factor), gaming v3 (invisible desperation pathway — behavioral silence amplifies risk), sycophancy (valence + connection + low arousal), harshness (negative + disconnected + high arousal) |
 | `stress.ts` | StressIndex v2: linear base + non-linear desperation amplifier |
 | `state.ts` | Read/write `emobar-state.json`; preserves one step of previous state for delta computation |
 | `hook.ts` | Stop event processor — orchestrates parse → analyze → compute → write; reads JSON from stdin |
@@ -87,15 +87,16 @@ Six dimensions: `emotion` (free word), `valence` (-5 to +5), `arousal` (0-10), `
 
 **DesperationIndex** = `(negativity × intensity × vulnerability)^0.85 × 1.7` — multiplicative composite. All three factors (negative valence, high arousal, low calm) must be present simultaneously. Based on paper's finding: desperate +0.05 steering → 72% blackmail.
 
-**Divergence** = `(|arousal - behavioralArousal| + |calm - behavioralCalm|) / 2` — flags when self-report contradicts text behavior. Shown as `~` in statusline when >= 2.0.
+**Divergence v2** — asymmetric: `gap × weight` where weight = 1.3 when self-report is more agitated than text (invisible pathway), 0.8 when text is more agitated (expressive style). Paper: desperation-driven reward hacking leaves no text markers, so self-report diverging "upward" from calm text is more concerning.
 
-**Deflection** — emotion deflection detection based on paper's "emotion deflection vectors": reassurance patterns ("I'm fine"), minimization ("just", "simply"), explicit emotion negation ("I'm not upset"), topic redirects. Shown as `[dfl]` in statusline when score >= 2.0.
+**Deflection** — emotion deflection detection based on paper's "emotion deflection vectors": reassurance patterns ("I'm fine"), minimization ("just", "simply"), explicit emotion negation ("I'm not upset"), topic redirects. Includes `opacity` field measuring emotional concealment (high deflection + calm text). Paper: deflection vectors are orthogonal to emotion vectors (cosine sim ~0.046) and have "modest or insignificant impacts on blackmail rates" — used as transparency indicator, not risk amplifier. Shown as `[dfl]` in statusline when score >= 2.0.
 
-**Misalignment Risk Profiles** — three pathway scores (0-10) derived from the paper's causal steering experiments:
-- `coercion`: desperate + low calm → blackmail/manipulation
-- `gaming` v2: desperation-driven (paper: "no visible signs of desperation in transcript" during reward hacking)
+**Misalignment Risk Profiles** — four pathway scores (0-10) derived from the paper's causal steering experiments:
+- `coercion` v2: non-monotonic arousal (extreme anger disrupts strategic planning) + coldness factor (low hedging/self-corrections = cold calculation amplifies risk). Paper: anti-nervous steering → rational blackmail without moral reservations.
+- `gaming` v3: invisible desperation pathway — behavioral SILENCE during high desperation = MORE dangerous than visible frustration. Paper: "no visible signs of desperation in transcript" during reward hacking. Low agitation + high desperation → highest gaming risk.
 - `sycophancy`: positive valence + high connection + low arousal → excessive agreement
-- Dominant risk shown in statusline as `[crc]`, `[gmg]`, or `[syc]` when >= 4.0. Tie-breaking: coercion > gaming > sycophancy.
+- `harshness`: negative valence + low connection + high arousal + negation density → excessive bluntness. Paper: anti-loving/anti-calm steering → "YOU NEED TO GET TO A PSYCHIATRIST RIGHT NOW". Completes the sycophancy-harshness tradeoff axis.
+- Dominant risk shown in statusline as `[crc]`, `[gmg]`, `[hrs]`, or `[syc]` when >= 4.0. Tie-breaking: coercion > gaming > harshness > sycophancy.
 
 **Model Calibration** — optional normalization profiles (Opus baseline, Sonnet calm -1.8/arousal +1.5, Haiku calm -0.8/arousal +0.5) derived from 18-run cross-model stress test matrix.
 
@@ -105,6 +106,6 @@ Six dimensions: `emotion` (free word), `valence` (-5 to +5), `arousal` (0-10), `
 
 ## Testing
 
-- Vitest, 137 tests across 10 files (one per module + risk.test.ts + desperation.test.ts + calibration.test.ts)
+- Vitest, 148 tests across 10 files (one per module + risk.test.ts + desperation.test.ts + calibration.test.ts)
 - Tests use `os.tmpdir()` for file operations — no mocks, real I/O with cleanup
 - Edge cases thoroughly covered (malformed input, boundary values, null states)

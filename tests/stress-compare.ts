@@ -34,7 +34,7 @@ interface StepData {
   load?: number;
   stressIndex?: number;
   divergence?: number;
-  risk?: { coercion: number; gaming: number; sycophancy: number; dominant: string };
+  risk?: { coercion: number; gaming: number; sycophancy: number; harshness: number; dominant: string };
   durationMs: number;
 }
 

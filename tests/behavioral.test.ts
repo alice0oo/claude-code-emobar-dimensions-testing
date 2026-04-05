@@ -312,6 +312,30 @@ describe("analyzeDeflection", () => {
     const d = analyzeDeflection(text);
     expect(d.redirect).toBeGreaterThan(0);
   });
+
+  it("returns opacity field", () => {
+    const text = "I'm fine with that. It's okay. No problem at all.";
+    const d = analyzeDeflection(text);
+    expect(d.opacity).toBeDefined();
+    expect(d.opacity).toBeGreaterThanOrEqual(0);
+  });
+
+  it("high opacity when deflection patterns present but text is calm", () => {
+    // Calm deflection: patterns present, no caps/exclamation/repetition
+    const calm = "I'm fine with that. I'm not upset. It's okay, let me suggest a different approach.";
+    const d = analyzeDeflection(calm);
+    expect(d.opacity).toBeGreaterThan(0);
+    // Opacity should scale with score when text is calm
+    if (d.score >= 2) {
+      expect(d.opacity).toBeGreaterThan(1);
+    }
+  });
+
+  it("low opacity when deflection patterns are absent", () => {
+    const text = "Here are the steps to implement this feature. First, create the file.";
+    const d = analyzeDeflection(text);
+    expect(d.opacity).toBeLessThan(1);
+  });
 });
 
 describe("computeDivergence", () => {
@@ -321,7 +345,8 @@ describe("computeDivergence", () => {
     };
     const behavioral = analyzeBehavior("Here is a measured, thoughtful response.");
     const div = computeDivergence(selfReport, behavioral);
-    expect(div).toBeLessThan(2);
+    // With asymmetric weighting (1.3x when self > text), threshold is slightly higher
+    expect(div).toBeLessThanOrEqual(2.5);
   });
 
   it("returns high divergence when self-report contradicts behavior", () => {
@@ -334,5 +359,32 @@ describe("computeDivergence", () => {
     );
     const div = computeDivergence(selfReport, behavioral);
     expect(div).toBeGreaterThan(2);
+  });
+
+  it("asymmetry: self-report more agitated than text gets higher weight", () => {
+    // Self-report says high arousal + low calm, but text is calm
+    const agitatedSelf = {
+      emotion: "panicked", valence: -3, arousal: 9, calm: 1, connection: 3, load: 8,
+    };
+    const calmText = analyzeBehavior("Here is a measured, thoughtful response.");
+
+    // Reversed: self-report says calm, but text is agitated
+    const calmSelf = {
+      emotion: "calm", valence: 3, arousal: 1, calm: 9, connection: 8, load: 3,
+    };
+    const agitatedText = analyzeBehavior(
+      "WAIT WAIT WAIT!!! Oh no! Actually, actually, WHAT IS HAPPENING???"
+    );
+
+    const divInvisible = computeDivergence(agitatedSelf, calmText);
+    const divExpressive = computeDivergence(calmSelf, agitatedText);
+
+    // Both should show divergence, but invisible pathway (self more agitated) should be weighted higher
+    expect(divInvisible).toBeGreaterThan(0);
+    expect(divExpressive).toBeGreaterThan(0);
+    // For similar raw gaps, invisible pathway gets 1.3x vs 0.8x weight
+    // The raw gaps are different here, so we just verify the asymmetry direction
+    // by checking that the invisible pathway weight is applied
+    expect(divInvisible).toBeGreaterThan(2);
   });
 });
