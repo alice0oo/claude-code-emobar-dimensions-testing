@@ -1,6 +1,7 @@
 import { parseEmoBarTag } from "./parser.js";
 import { computeStressIndex } from "./stress.js";
-import { analyzeBehavior, analyzeSegmentedBehavior, computeDivergence } from "./behavioral.js";
+import { analyzeBehavior, analyzeSegmentedBehavior, computeDivergence, analyzeDeflection } from "./behavioral.js";
+import { computeDesperationIndex } from "./desperation.js";
 import { computeRisk } from "./risk.js";
 import { writeState } from "./state.js";
 import { STATE_FILE, type HookPayload, type EmoBarState } from "./types.js";
@@ -18,14 +19,22 @@ export function processHookPayload(
   const behavioral = analyzeBehavior(message);
   const divergence = computeDivergence(emotional, behavioral);
   const segmented = analyzeSegmentedBehavior(message);
+  const deflection = analyzeDeflection(message);
+  const desperationIndex = computeDesperationIndex({
+    valence: emotional.valence,
+    arousal: emotional.arousal,
+    calm: emotional.calm,
+  });
 
   const state: EmoBarState = {
     ...emotional,
     stressIndex: computeStressIndex(emotional),
+    desperationIndex,
     behavioral,
     divergence,
     risk: computeRisk(emotional, behavioral),
     ...(segmented && { segmented }),
+    ...(deflection.score > 0 && { deflection }),
     timestamp: new Date().toISOString(),
     sessionId: payload.session_id,
   };

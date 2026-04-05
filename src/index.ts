@@ -1,9 +1,10 @@
 export { readState } from "./state.js";
 export { computeStressIndex } from "./stress.js";
 export { parseEmoBarTag } from "./parser.js";
-export { analyzeBehavior, analyzeSegmentedBehavior, computeDivergence } from "./behavioral.js";
+export { analyzeBehavior, analyzeSegmentedBehavior, computeDivergence, analyzeDeflection } from "./behavioral.js";
+export { computeDesperationIndex } from "./desperation.js";
 export { computeRisk } from "./risk.js";
 export { formatState, formatCompact, formatMinimal } from "./display.js";
 export { configureStatusLine, restoreStatusLine } from "./setup.js";
-export type { EmotionalState, EmoBarState, BehavioralSignals, MisalignmentRisk, SegmentedBehavior } from "./types.js";
+export type { EmotionalState, EmoBarState, BehavioralSignals, MisalignmentRisk, SegmentedBehavior, DeflectionSignals } from "./types.js";
 export { STATE_FILE } from "./types.js";
