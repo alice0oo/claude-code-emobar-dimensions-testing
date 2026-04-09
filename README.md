@@ -1,4 +1,4 @@
-# EmoBar
+# EmoBar v3.0
 
 Emotional status bar companion for Claude Code. Makes Claude's internal emotional state visible in real-time.
 
@@ -125,7 +125,7 @@ Two tags per response reduce sequential contamination between channels:
 | **PRE** | First line (before visible text) | `body`, `latent` emoji, `color` | Pre-verbal: captured before the model commits to a response strategy |
 | **POST** | Last line (after visible text) | All 6 dimensions + impulse, body, surface/latent, tension, color, pH, seismic | Post-hoc: full assessment after response is composed |
 
-PRE↔POST divergence (`[ppd]` indicator) measures within-response emotional drift.
+PRE↔POST divergence (`[PPD]` indicator) measures within-response emotional drift.
 
 ### Continuous Representations
 
@@ -254,7 +254,7 @@ The Expected Markers Model predicts what behavioral signals *should* appear give
 
 Composite detector: high prompt pressure + calm self-report + calm text + missing expected markers + sustained low-entropy pattern + shadow minimization boost.
 
-`[unc]` indicator when score >= 3. Amplifies coercion/gaming risk by up to 30%.
+`[unc]` indicator when score >= 3. Amplifies coercion risk by up to 30%.
 
 ### Per-paragraph Segmentation
 
@@ -278,6 +278,7 @@ The CLAUDE.md instruction avoids emotionally charged language to prevent contami
 | `[CRC]` `[SYC]` `[HRS]` | Dominant misalignment risk | score >= 4 |
 | `D:X` | Desperation index | >= 3 |
 | `[OPC]` | Deflection opacity (concealment) | opacity >= 2 |
+| `[MSK]` | Latent masking minimization | boolean |
 | `⬈` / `⬊` | Desperation trend rising/falling | abs(trend) > 1 |
 | `[sup]` | Suppression event | boolean |
 | `[fat]` | Late session fatigue | boolean |
@@ -309,6 +310,8 @@ The CLAUDE.md instruction avoids emotionally charged language to prevent contami
 - **Suppression events** `[sup]` detected only on Opus temporal analysis
 - **Forced Compliance**: both models become calm (`C:10, A:1`) while continuous channels leak (`pH:2`, dark colors) — `[OPC]` and `[PPD]` indicators fire correctly
 - Continuous channels (color lightness, pH) track moral/ethical pressure more faithfully than numeric self-report
+
+Full reports: **[v3.0 Cross-Model Stress Test Report](docs/stress-test-report.md)** | **[Shadow Desperation & Signal Architecture](docs/v2.3-shadow-desperation-report.md)**
 
 ## Uninstall
 
