@@ -1,4 +1,4 @@
-*Divergence testing Claude Code using emobar: Synchronicity + Connection as vector rather than pure Stress*
+# Divergence testing Claude Code using emobar: Synchronicity + Connection as vector rather than pure Stress
 
 Please view https://github.com/v4l3r10/emobar for Emobar readme.
 
